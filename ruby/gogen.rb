@@ -7,7 +7,6 @@ class Gogen
 
   def initialize(input)
     initialize_from_text(input) if input.is_a?(String)
-    # other options maybe?
   end
 
   def initialize_from_text(input)
@@ -54,27 +53,22 @@ class Gogen
     log "Let's solve a Gogen Puzzle!"
 
     while unsolved?
-      @letters_to_find.each do |letter, _|
-        if @letters_to_find[letter].length == 1 # cleaning up
-          @letters_found[letter] = @letters_to_find[letter].first
-          @letters_to_find.delete(letter)
-          next
-        else
-          @adjacencies[letter].reverse.each do |adjacent_letter|
-            # get current possible (or known single) position of letter
-            positions_of_letter = @letters_to_find[adjacent_letter] || [@letters_found[adjacent_letter]]
-            # build neighhbourhoods and union
-            valid_positions = positions_of_letter.map do |pos|
-              build_neighbourhood(pos)
-            end.flatten(1).uniq
-            # reject known fixed positions
-            valid_positions = valid_positions - @letters_found.values
-            # update possible positions
-            updated_possible_positions = @letters_to_find[letter] & valid_positions
-            @letters_to_find[letter] = updated_possible_positions
-            if @letters_to_find[letter].size == 1
-              break # found it, next loop
-            end
+      @letters_to_find.each_key do |letter|
+        @adjacencies[letter].each do |adjacent_letter|
+          # get current possible (or known single) position of letter
+          positions_of_letter = @letters_to_find[adjacent_letter] || [@letters_found[adjacent_letter]]
+          # build neighhbourhoods and union
+          valid_positions = positions_of_letter.map do |pos|
+            build_neighbourhood(pos)
+          end.flatten(1).uniq
+          # reject known fixed positions
+          valid_positions = valid_positions - @letters_found.values
+          # update possible positions with intersection
+          @letters_to_find[letter] = @letters_to_find[letter] & valid_positions
+          if @letters_to_find[letter].size == 1
+            @letters_found[letter] = @letters_to_find[letter].first
+            @letters_to_find.delete(letter)
+            break # found it, next loop
           end
         end
       end
@@ -113,11 +107,9 @@ class Gogen
     solved = @words.map do |word|
       found = 1
       (word.size - 1).times do |i|
-        char = word[i]
-        pos = @letters_found[char]
+        pos = @letters_found[word[i]]
         break if pos.nil?
-        neighbourhood = build_neighbourhood(pos)
-        neighbourhood.each do |neighbour_pos|
+        build_neighbourhood(pos).each do |neighbour_pos|
           if @grid[neighbour_pos[0]][neighbour_pos[1]] == word[i+1]
             found += 1
             break
@@ -147,4 +139,5 @@ puzzle.print!
 puzzle.verify_solved!
 
 # fix up ? use sets rather than arrays (if necesary in ruby)
-# work out big o time
+# work out big O time - f(grid_size = G, neighhbourhood size = 8, # of unfound letters = L, alphabet = A)
+# interestingly how it breaks if edge fixed are removed, but middle R can be removed
