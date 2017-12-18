@@ -1,7 +1,7 @@
 class Gogen
   TEXT_INPUT_SPLIT = "#####"
   GRID_SIZE = 5
-  PRINT_PADDING = 4
+  PRINT_PADDING = 3
   BLANK_CHARACTER = '_'
 
 
@@ -103,10 +103,30 @@ class Gogen
   def print!
     PRINT_PADDING.times { puts "\n" }
     @grid.each do |row|
-      puts [" " * PRINT_PADDING, row.join("  ")].flatten.join("")
+      puts ["\t" * PRINT_PADDING, row.join("  ")].flatten.join("")
       puts "\n"
     end
     PRINT_PADDING.times { puts "\n" }
+  end
+
+  def verify_solved!
+    solved = @words.map do |word|
+      found = 1
+      (word.size - 1).times do |i|
+        char = word[i]
+        pos = @letters_found[char]
+        break if pos.nil?
+        neighbourhood = build_neighbourhood(pos)
+        neighbourhood.each do |neighbour_pos|
+          if @grid[neighbour_pos[0]][neighbour_pos[1]] == word[i+1]
+            found += 1
+            break
+          end
+        end
+      end
+      found.eql?(word.size)
+    end.all? { true }
+    log "Actually Solved? #{solved}"
   end
 
   def unsolved?
@@ -127,5 +147,4 @@ puzzle.print!
 puzzle.verify_solved!
 
 # fix up ? use sets rather than arrays (if necesary in ruby)
-# write verify solved! method to find all words
 # work out big o time
