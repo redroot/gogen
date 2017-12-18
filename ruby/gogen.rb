@@ -124,5 +124,8 @@ puzzle = Gogen.new(File.read(path))
 
 puzzle.solve!
 puzzle.print!
+puzzle.verify_solved!
 
-# fix up ? use sets rather than arrays
+# fix up ? use sets rather than arrays (if necesary in ruby)
+# write verify solved! method to find all words
+# work out big o time
