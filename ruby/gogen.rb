@@ -23,15 +23,15 @@ class Gogen
 
   # returns hash of letter and current co-ords
   def build_found_letters_with_pos(grid)
-    letters = Hash.new { |h, k| h[k] = {} }
-    @grid.each_with_index do |col, col_index|
+    @grid.each_with_index.reduce(hash_init_with_array) do |letters, (col, col_index)|
       col.each_with_index do |letter, row_index|
         letters[letter] = [col_index, row_index] unless letter.eql?(BLANK_CHARACTER)
       end
+      letters
     end
-    letters
   end
 
+  # returns a hash of unfound letters and an array of all remaining grid positions
   def build_unfound_letter_with_remaining_pos(letters_found)
     letters_to_find = ('A'..'Y').to_a - letters_found.keys
     all_positions = (0..GRID_SIZE-1).to_a.product((0..GRID_SIZE-1).to_a)
@@ -42,6 +42,20 @@ class Gogen
     end
   end
 
+  # build a list of what letters are next to each letter in the word
+  def build_adjacencies(words)
+    words.reduce(hash_init_with_array) do |adjacencies, word|
+      (word.size-1).times do |i|
+        first = word[i]
+        second = word[i+1]
+        adjacencies[first].push(second)
+        adjacencies[second].push(first)
+      end
+      adjacencies
+    end
+  end
+
+  # build an array of neighbouring grid positions
   def build_neighbourhood(pos)
     x, y = pos
     x_range = ([0, x-1].max..[GRID_SIZE-1, x+1].min).to_a
@@ -54,8 +68,9 @@ class Gogen
 
     while unsolved?
       @letters_to_find.each_key do |letter|
+        # loop through all adjacent letters of unfound letter
         @adjacencies[letter].each do |adjacent_letter|
-          # get current possible (or known single) position of letter
+          # get current possible (or known single) position of adjacent letter
           positions_of_letter = @letters_to_find[adjacent_letter] || [@letters_found[adjacent_letter]]
           # build neighhbourhoods and union
           valid_positions = positions_of_letter.map do |pos|
@@ -78,20 +93,6 @@ class Gogen
     @letters_found.each do |letter, pos|
       @grid[pos[0]][pos[1]] = letter
     end
-  end
-
-  # build a list of what letters are next to each letter in the word
-  def build_adjacencies(words)
-    adjacencies = Hash.new { |h, k| h[k] = [] }
-    words.each do |word|
-      (word.size-1).times do |i|
-        first = word[i]
-        second = word[i+1]
-        adjacencies[first].push(second)
-        adjacencies[second].push(first)
-      end
-    end
-    adjacencies
   end
 
   def print!
@@ -125,6 +126,13 @@ class Gogen
     @letters_to_find.any?
   end
 
+  private
+
+  # a little ugly as Hash.new([]) doesn't work
+  def hash_init_with_array
+    Hash.new { |h, k| h[k] = [] }
+  end
+
   def log(msg)
     puts "[GOGEN] #{msg}"
   end
@@ -134,6 +142,7 @@ PUZZLE = ENV['PUZZLE'] || 1
 path = File.join(File.dirname(__FILE__), ["..", "examples", "#{PUZZLE}-unsolved.txt"])
 puzzle = Gogen.new(File.read(path))
 
+puzzle.print!
 puzzle.solve!
 puzzle.print!
 puzzle.verify_solved!
