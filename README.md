@@ -1,8 +1,18 @@
-I like Gogen Puzzles - https://www.google.co.uk/search?q=gogen+puzzle&oq=gogen+puzzle&aqs=chrome.0.35i39j69i60l3j35i39j0.1294j0j7&sourceid=chrome&ie=UTF-8
+### Gogen Puzzle Solver
 
-This repo has my attempts to solve them in various languages and algos, trying to make the best of each language
+Attempts at solving a gogen puzzle solver in various languages
 
-- Ruby (done) - `cd ruby & ruby gogen.rb 1`
-- Go
-- Elixir
-- Clojure
+    cd ruby & ruby gogen.rb
+    cd go & go run gogen.go
+
+### Thoughts
+
+#### Ruby
+
+- I was keen to use set operations and there are available on arrays out of the box which was a pleasant surprise
+
+#### Go
+
+- Set isn't part of the standard library so used a great third party representation. I definitely missed the unified API that Ruby provides for array/sets and maps.
+- Typed definition especially involving maps took a little while to grok, plenty of the shortcuts in Ruby unavailable but I appreciated it, if it compiles it tended to run
+- Lack of `cond || default` was a little frustrating.
