@@ -1,0 +1,17 @@
+D _ R _ S
+_ _ _ _ _
+K _ M _ L
+_ _ _ _ _
+B _ Q _ N
+#####
+BAKERY
+DERV
+FAUX
+HOME
+JUMPY
+PHLOX
+QUAGMIRE
+SWIM
+UPON
+WRECK
+WRIST
