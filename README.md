@@ -2,7 +2,7 @@ I like Gogen Puzzles - https://www.google.co.uk/search?q=gogen+puzzle&oq=gogen+p
 
 This repo has my attempts to solve them in various languages and algos, trying to make the best of each language
 
-- Ruby (done)
+- Ruby (done) - `cd ruby & ruby gogen.rb 1`
 - Go
 - Elixir
 - Clojure
