@@ -27,8 +27,10 @@ defmodule Gogen do
       grid
       |> Enum.with_index
       |> Enum.reduce(%{}, fn({col, col_index}, letters) ->
-        Enum.each(Enum.with_index(col), fn({letter, row_index}) ->
-          unless letter == @blank_character do
+        col
+        |> Enum.with_index
+        |> Enum.each(fn({letter, row_index}) ->
+          unless letter == @blank_character do # cant use filter as we need to maintain grid position
             Map.put(letters, letter, %Position{x: col_index, y: row_index})
           end
         end)
