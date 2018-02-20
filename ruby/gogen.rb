@@ -23,7 +23,7 @@ class Gogen
 
   # returns hash of letter and current co-ords
   def build_found_letters_with_pos(grid)
-    @grid.each_with_index.reduce(hash_init_with_array) do |letters, (col, col_index)|
+    grid.each_with_index.reduce(hash_init_with_array) do |letters, (col, col_index)|
       col.each_with_index do |letter, row_index|
         letters[letter] = [col_index, row_index] unless letter.eql?(BLANK_CHARACTER)
       end
