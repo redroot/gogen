@@ -5,6 +5,8 @@ Attempts at solving a gogen puzzle solver in various languages
     cd ruby & ruby gogen.rb
     cd go & go run gogen.go
 
+Coming Soon: Elixir, Clojure
+
 ### Thoughts
 
 #### Ruby
