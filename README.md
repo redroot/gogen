@@ -20,3 +20,8 @@ Coming Soon: Elixir, Clojure
 - Lack of `cond || default` was a little frustrating.
 
 #### Elixir
+
+- Fun to use list comprehension style syntax to work on `all_positions` and `all_letters` methods
+- Piping syntax made nested reduces for data_from_input method messy, decided to use fixed grid size and modulus/rounding to get correct positions
+- I initially used a `%Position{x,y}` struct, but building maps of remaining positions was super slow compared to straight maps, so dropped that in favour of straight maps
+- Building letter adjacencies was interesting, reduce a list of strings to a map of Letters of a List of the adjacent ones. In ruby I used reduce and a for loop for each work, modifying the accumulator every time.
