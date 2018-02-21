@@ -93,6 +93,16 @@ IO.puts "Lets solve puzzle ##{puzzle}!"
 Gogen.run(File.read!("../examples/#{puzzle}-unsolved.txt"))
 
 word = "asdf"
-word
-|> String.split("", trim: true)
-|> Enum.with_index
+# map of len(word) - 1 as index, use slice to get hcaracters, reduce into map
+# 2 for extra character
+pairs = Enum.map((0..String.length(word) - 2), fn(index) ->
+  { String.slice(word, index, 1), String.slice(word, index+1, 1) }
+end)
+
+Enum.reduce(pairs, %{}, fn({ first, second }, acc) ->
+  IO.inspect { first, second }
+  # doesnt work, needs intialisation
+  new_acc = Map.update(acc, first, [], fn v -> Enum.concat(v, [second]) end)
+  another_acc = Map.update(new_acc, second, [], fn v -> Enum.concat(v, [first]) end)
+  another_acc
+end)
