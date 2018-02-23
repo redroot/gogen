@@ -6,18 +6,60 @@ defmodule Gogen do
 
   def run(text) do
     { grid, words, letters_found } = data_from_input(text)
-    letters_to_find = build_letters_to_find(letters_found)
-    adjacencies =  build_adjacencies(words)
+    { letters_to_find, adjacencies } = { build_letters_to_find(letters_found), build_adjacencies(words) }
     print_grid(grid)
-    IO.puts "Data ready, lets solve!"
-    IO.inspect adjacencies
-    IO.inspect build_neighbourhood(%{x: 2, y: 3})
-    updated_grid = solve(letters_to_find, letters_found, adjacencies, grid)
-    print_grid(updated_grid)
+    solve(letters_to_find, letters_found, adjacencies)
+    |> (&update_grid(grid, &1)).()
+    |> print_grid
   end
 
-  defp solve(_, _, _, grid) do
-    grid
+  defp solve(letters_to_find, letters_found, adjacencies) when map_size(letters_to_find) > 0 do
+    IO.inspect "Solving, letters_remaining: #{length(all_letters()) - map_size(letters_found)}"
+    { new_letters_to_find, new_letters_found } =
+      Enum.reduce(letters_to_find, {letters_to_find, letters_found}, fn({letter, _orig_pos_list}, { top_ltf, top_lf }) ->
+        { new_top_ltf, new_top_lf, _ } =
+          Enum.reduce(adjacencies[letter], {top_ltf, top_lf, :continue}, fn(adj_letter, {inner_ltf, inner_lf, action}) ->
+            if action == :break do
+              # we've found this letter, just return early to the outer loop by skipping the rest
+              { inner_ltf, inner_lf, :break }
+            else # still need to processing the next adjacent letter
+              current_top_letter_pos_list = Map.get(inner_ltf, letter)
+              positions_of_adj_letter = List.wrap(letters_to_find[adj_letter] || letters_found[adj_letter])
+              # candidates from adjacency neighbourhood
+              pos_list_from_adjacencies =
+                Enum.map(positions_of_adj_letter, &build_neighbourhood(&1))
+                |> List.flatten
+                |> Enum.uniq
+              # difference, remove ones we know about
+              pos_list_without_found_letters = pos_list_from_adjacencies -- Map.values(inner_lf)
+              # intersection, current possible list and candidates
+              updated_inner_ltf_value = current_top_letter_pos_list -- (current_top_letter_pos_list -- pos_list_without_found_letters)
+              if length(updated_inner_ltf_value) == 1 do
+                [pos | _] = updated_inner_ltf_value
+                new_inner_ltf = Map.delete(inner_ltf, letter)
+                new_inner_lf = Map.put(inner_lf, letter, pos)
+                { new_inner_ltf, new_inner_lf, :break } # break out of inner callback
+              else
+                new_inner_ltf = Map.put(inner_ltf, letter, updated_inner_ltf_value)
+                { new_inner_ltf, inner_lf, :continue }
+              end
+            end
+          end)
+        { new_top_ltf, new_top_lf }
+      end)
+    solve(new_letters_to_find, new_letters_found, adjacencies)
+  end
+
+  defp solve(letters_to_find, letters_found, _) when map_size(letters_to_find) == 0 do
+    letters_found
+  end
+
+  def update_grid(grid, letter_pos_map) do
+    Enum.reduce(letter_pos_map, grid, fn({letter, pos}, new_grid) ->
+      Enum.at(new_grid, pos.x)
+      |> List.replace_at(pos.y, letter)
+      |> (&List.replace_at(new_grid, pos.x, &1)).()
+    end)
   end
 
   defp build_letters_to_find(letters_found) do
@@ -29,9 +71,19 @@ defmodule Gogen do
   end
 
   defp build_adjacencies(words) do
-    Enum.reduce(words, %{}, fn(word, acc) ->
-      for i <- 0..(String.length(word)-1), do: i
+    initial_letter_map =
+      List.duplicate([], 25)
+      |> (&List.zip([all_letters(), &1])).()
+      |> Map.new
+    letter_pairs = Enum.flat_map(words, fn(word) ->
+      Enum.map((0..String.length(word) - 2), fn(index) ->
+        { String.slice(word, index, 1), String.slice(word, index+1, 1) }
+      end)
+    end)
+    Enum.reduce(letter_pairs, initial_letter_map, fn({ first, second }, acc) ->
       acc
+      |> Map.update!(first, fn l -> Enum.uniq(l ++ [second]) end)
+      |> Map.update!(second, fn l -> Enum.uniq(l ++ [first]) end)
     end)
   end
 
@@ -75,7 +127,7 @@ defmodule Gogen do
   end
 
   defp all_positions do
-    range = 0..@grid_size
+    range = 0..(@grid_size - 1)
     for x <- range, y <- range, do: %{x: x, y: y}
   end
 
@@ -91,18 +143,3 @@ end
 puzzle = System.get_env("PUZZLE") || "1"
 IO.puts "Lets solve puzzle ##{puzzle}!"
 Gogen.run(File.read!("../examples/#{puzzle}-unsolved.txt"))
-
-word = "asdf"
-# map of len(word) - 1 as index, use slice to get hcaracters, reduce into map
-# 2 for extra character
-pairs = Enum.map((0..String.length(word) - 2), fn(index) ->
-  { String.slice(word, index, 1), String.slice(word, index+1, 1) }
-end)
-
-Enum.reduce(pairs, %{}, fn({ first, second }, acc) ->
-  IO.inspect { first, second }
-  # doesnt work, needs intialisation
-  new_acc = Map.update(acc, first, [], fn v -> Enum.concat(v, [second]) end)
-  another_acc = Map.update(new_acc, second, [], fn v -> Enum.concat(v, [first]) end)
-  another_acc
-end)
