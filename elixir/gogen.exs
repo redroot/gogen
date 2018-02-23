@@ -23,17 +23,12 @@ defmodule Gogen do
               # we've found this letter, just return early to the outer loop by skipping the rest
               { inner_ltf, inner_lf, :break }
             else # still need to processing the next adjacent letter
-              current_top_letter_pos_list = Map.get(inner_ltf, letter)
-              positions_of_adj_letter = List.wrap(letters_to_find[adj_letter] || letters_found[adj_letter])
-              # candidates from adjacency neighbourhood
-              pos_list_from_adjacencies =
-                Enum.map(positions_of_adj_letter, &build_neighbourhood(&1))
-                |> List.flatten
-                |> Enum.uniq
-              # difference, remove ones we know about
-              pos_list_without_found_letters = pos_list_from_adjacencies -- Map.values(inner_lf)
-              # intersection, current possible list and candidates
-              updated_inner_ltf_value = current_top_letter_pos_list -- (current_top_letter_pos_list -- pos_list_without_found_letters)
+              updated_inner_ltf_value =
+                update_letter_pos_map_from_adjacencies(
+                  Map.get(inner_ltf, letter),
+                  List.wrap(letters_to_find[adj_letter] || letters_found[adj_letter]),
+                   Map.values(inner_lf)
+                )
               if length(updated_inner_ltf_value) == 1 do
                 [pos | _] = updated_inner_ltf_value
                 new_inner_ltf = Map.delete(inner_ltf, letter)
@@ -52,6 +47,15 @@ defmodule Gogen do
 
   defp solve(letters_to_find, letters_found, _) when map_size(letters_to_find) == 0 do
     letters_found
+  end
+
+  defp update_letter_pos_map_from_adjacencies(current_letter_positions, adj_letters, known_letter_positions) do
+    pos_list_from_adjacencies =
+      Enum.map(adj_letters, &build_neighbourhood(&1))
+      |> List.flatten
+      |> Enum.uniq
+    pos_list_without_found_letters = pos_list_from_adjacencies -- known_letter_positions # difference, remove ones we know about
+    current_letter_positions -- (current_letter_positions -- pos_list_without_found_letters) # intersection va List --
   end
 
   def update_grid(grid, letter_pos_map) do
