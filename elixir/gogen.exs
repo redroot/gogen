@@ -6,85 +6,97 @@ defmodule Gogen do
 
   def run(text) do
     { grid, words, letters_found } = data_from_input(text)
-    { letters_to_find, adjacencies } = { build_letters_to_find(letters_found), build_adjacencies(words) }
+    { letters_pos_set, adjacencies } = { build_letters_pos_set(letters_found), build_adjacencies(words) }
     print_grid(grid)
-    solve(letters_to_find, letters_found, adjacencies)
+    solve(letters_pos_set, adjacencies, remaining_letters_to_find(letters_pos_set))
     |> (&update_grid(grid, &1)).()
     |> print_grid
   end
 
-  defp solve(letters_to_find, letters_found, adjacencies) when map_size(letters_to_find) > 0 do
-    IO.inspect "Solving, letters_remaining: #{length(all_letters()) - map_size(letters_found)}"
-    { new_letters_to_find, new_letters_found } =
-      Enum.reduce(letters_to_find, {letters_to_find, letters_found}, fn({letter, _orig_pos_list}, { top_ltf, top_lf }) ->
-        { new_top_ltf, new_top_lf, _ } =
-          Enum.reduce(adjacencies[letter], {top_ltf, top_lf, :continue}, fn(adj_letter, {inner_ltf, inner_lf, action}) ->
-            if action == :break do
-              # we've found this letter, just return early to the outer loop by skipping the rest
-              { inner_ltf, inner_lf, :break }
-            else # still need to processing the next adjacent letter
-              updated_inner_ltf_value =
-                update_letter_pos_map_from_adjacencies(
-                  Map.get(inner_ltf, letter),
-                  List.wrap(letters_to_find[adj_letter] || letters_found[adj_letter]),
-                   Map.values(inner_lf)
-                )
-              if length(updated_inner_ltf_value) == 1 do
-                [pos | _] = updated_inner_ltf_value
-                new_inner_ltf = Map.delete(inner_ltf, letter)
-                new_inner_lf = Map.put(inner_lf, letter, pos)
-                { new_inner_ltf, new_inner_lf, :break } # break out of inner callback
-              else
-                new_inner_ltf = Map.put(inner_ltf, letter, updated_inner_ltf_value)
-                { new_inner_ltf, inner_lf, :continue }
-              end
+  defp solve(letters_pos_set, adjacencies, letters_to_find) when letters_to_find > 0 do
+    # recurse until every letter has one value
+    IO.inspect "right im here, #{letters_to_find} remaining"
+
+    foo = Enum.reduce(letters_pos_set, letters_pos_set, fn({letter, _orig_pos_list}, top_pos_set) ->
+      { new_top_pos_set, _ } =
+        Enum.reduce(adjacencies[letter], { top_pos_set, :continue }, fn(adj_letter, { inner_pos_set, inner_action }) ->
+          if inner_action == :done do
+            { inner_pos_set, :done }  # done for this top level letter, skip all further adj letter checks
+          else
+            known_letter_positions =
+              inner_pos_set
+              |> Enum.flat_map(fn {_, v} -> if(length(v) == 1, do: [v], else: []) end)
+              |> List.flatten
+
+            # IO.inspect "Letter: #{letter}, Adj: #{adj_letter} = known letter positions"
+            # IO.inspect length(known_letter_positions)
+
+            updated_inner_pos_set_letter_value =
+              update_letter_pos_set_value_from_adjacencies(
+                Map.get(inner_pos_set, letter),
+                Map.get(inner_pos_set, adj_letter),
+                known_letter_positions
+              )
+            #
+            IO.inspect "Letter: #{letter}, Adj: #{adj_letter} = updated pos set for letter"
+            if letter == "D" do
+              IO.inspect Map.get(inner_pos_set, letter)
+              IO.inspect Map.get(inner_pos_set, adj_letter)
+              IO.inspect known_letter_positions
+              IO.inspect updated_inner_pos_set_letter_value
             end
-          end)
-        { new_top_ltf, new_top_lf }
+
+            new_inner_pos_set = Map.put(inner_pos_set, letter, updated_inner_pos_set_letter_value)
+            if length(updated_inner_pos_set_letter_value) == 1 do
+              { new_inner_pos_set, :done } # break out of inner callback
+            else
+              { new_inner_pos_set, :continue }
+            end
+          end
       end)
-    solve(new_letters_to_find, new_letters_found, adjacencies)
+      # IO.inspect "Letter: #{letter}, pos set at this pass"
+      # IO.inspect Enum.map(new_top_pos_set, fn {k,v} -> {k, length(v)} end)
+      new_top_pos_set
+    end)
+
+    #solve(foo, adjacencies, remaining_letters_to_find(foo))
+    #|> (&solve(&1, adjacencies, remaining_letters_to_find(&1))).()
   end
 
-  defp solve(letters_to_find, letters_found, _) when map_size(letters_to_find) == 0 do
-    letters_found
+  defp solve(letters_pos_set, _adjacencies, letters_to_find) when letters_to_find == 0 do
+    letters_pos_set
   end
 
-  defp update_letter_pos_map_from_adjacencies(current_letter_positions, adj_letters, known_letter_positions) do
+  defp update_letter_pos_set_value_from_adjacencies(current_letter_positions, adj_letter_positions, known_letter_positions) do
     pos_list_from_adjacencies =
-      Enum.map(adj_letters, &build_neighbourhood(&1))
+      Enum.map(adj_letter_positions, &build_neighbourhood(&1))
       |> List.flatten
       |> Enum.uniq
     pos_list_without_found_letters = pos_list_from_adjacencies -- known_letter_positions # difference, remove ones we know about
     current_letter_positions -- (current_letter_positions -- pos_list_without_found_letters) # intersection va List --
   end
 
-  def update_grid(grid, letter_pos_map) do
-    Enum.reduce(letter_pos_map, grid, fn({letter, pos}, new_grid) ->
+  def update_grid(grid, letters_pos_set) do
+    Enum.reduce(letters_pos_set, grid, fn({letter, [pos | _]}, new_grid) ->
       Enum.at(new_grid, pos.x)
       |> List.replace_at(pos.y, letter)
       |> (&List.replace_at(new_grid, pos.x, &1)).()
     end)
   end
 
-  defp build_letters_to_find(letters_found) do
-    letters_to_find = all_letters() -- Map.keys(letters_found)
-    positions_to_check = all_positions() -- Map.values(letters_found)
-    letters_to_find
-    |> Enum.map(fn a -> {a, positions_to_check} end)
-    |> Map.new
+  defp build_letters_pos_set(letters_found) do
+    remaining_positions = all_positions() -- Map.values(letters_found)
+    Enum.reduce(all_letters(), %{}, fn(letter, acc) ->
+      case Map.get(letters_found, letter) do
+        nil -> Map.put(acc, letter, remaining_positions)
+        pos -> Map.put(acc, letter, [pos])
+      end
+    end)
   end
 
   defp build_adjacencies(words) do
-    initial_letter_map =
-      List.duplicate([], 25)
-      |> (&List.zip([all_letters(), &1])).()
-      |> Map.new
-    letter_pairs = Enum.flat_map(words, fn(word) ->
-      Enum.map((0..String.length(word) - 2), fn(index) ->
-        { String.slice(word, index, 1), String.slice(word, index+1, 1) }
-      end)
-    end)
-    Enum.reduce(letter_pairs, initial_letter_map, fn({ first, second }, acc) ->
+    letter_pairs = Enum.flat_map(words, &word_to_letter_pairs/1)
+    Enum.reduce(letter_pairs, initial_letter_map(), fn({ first, second }, acc) ->
       acc
       |> Map.update!(first, fn l -> Enum.uniq(l ++ [second]) end)
       |> Map.update!(second, fn l -> Enum.uniq(l ++ [first]) end)
@@ -137,6 +149,22 @@ defmodule Gogen do
 
   defp all_letters do
     for n <- ?A..?Y, do: << n :: utf8 >>
+  end
+
+  defp word_to_letter_pairs(word) do
+    Enum.map((0..String.length(word) - 2), fn(index) ->
+      { String.slice(word, index, 1), String.slice(word, index+1, 1) }
+    end)
+  end
+
+  defp initial_letter_map do
+    List.duplicate([], length(all_letters()))
+    |> (&List.zip([all_letters(), &1])).()
+    |> Map.new
+  end
+
+  defp remaining_letters_to_find(letters_pos_set) do
+    Enum.count(letters_pos_set, fn {_, v} -> length(v) == 1 end)
   end
 
   defp transpose_array(arr) do
