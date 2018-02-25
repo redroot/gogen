@@ -15,32 +15,20 @@ defmodule Gogen do
 
   defp solve(letters_pos_set, adjacencies, letters_to_find) when letters_to_find > 0 do
     Enum.reduce(letters_pos_set, letters_pos_set, fn({letter, _orig_pos_list}, top_pos_set) ->
-      { new_top_pos_set, _ } =
-        Enum.reduce(adjacencies[letter], { top_pos_set, :continue }, fn(adj_letter, { inner_pos_set, inner_action }) ->
-          cond do
-            inner_action == :done ->
-              { inner_pos_set, :done }  # done for this top level letter, skip all further adj letter checks
-
-            length(inner_pos_set[letter]) == 1 -> # edge case where we start with 1
-              { inner_pos_set, :done }
-
-            true ->
-              updated_inner_pos_set_letter_value =
-                update_letter_pos_set_value_from_adjacencies(
-                  Map.get(inner_pos_set, letter),
-                  Map.get(inner_pos_set, adj_letter),
-                  extract_known_letter_positions(inner_pos_set)
-                )
-
-              new_inner_pos_set = Map.put(inner_pos_set, letter, updated_inner_pos_set_letter_value)
-              if length(updated_inner_pos_set_letter_value) == 1 do
-                { new_inner_pos_set, :done } # break out of inner callback
-              else
-                { new_inner_pos_set, :continue }
-              end
-          end
-        end)
-      new_top_pos_set
+      Enum.reduce(adjacencies[letter], top_pos_set, fn(adj_letter, inner_pos_set) ->
+        case length(inner_pos_set[letter]) do
+          1 -> # we've found set one, letters make no changes for the rest of the loop.
+            inner_pos_set
+          _ ->
+            updated_inner_pos_set_letter_value =
+              update_letter_pos_set_value_from_adjacencies(
+                Map.get(inner_pos_set, letter),
+                Map.get(inner_pos_set, adj_letter),
+                extract_known_letter_positions(inner_pos_set)
+              )
+            Map.put(inner_pos_set, letter, updated_inner_pos_set_letter_value)
+        end
+      end)
     end)
     |> (&solve(&1, adjacencies, remaining_letters_to_find(&1))).()
   end
