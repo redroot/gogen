@@ -13,6 +13,17 @@
         col (range 0 grid-size)]
     [col row]))
 
+(def all-letters
+  (map #(str (char %))
+    (range (int \A) (int \Y))))
+
+(def initial-letter-map
+  (let [letter all-letters]
+    (into {}
+      (map
+        (fn [l] [l,[]])
+        all-letters))))
+
 (defn puzzle-id []
   (or (System/getenv "PUZZLE")
       "1"))
@@ -62,6 +73,13 @@
     (into []
           [(extract-adjacencies words)
            (extract-letters-pos-map grid)])))
+
+; get adjacenies
+; get letter pos map
+; start with data-from-puzzle and then loop / reduce
+; over extract-letters-pos-map until all letters have only one pos
+; solved!
+; printing methid required
 
 (defn -main
   "Main entry point to solving puzzles"
