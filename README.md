@@ -7,7 +7,7 @@ Attempts at solving a gogen puzzle solver in various languages
     cd ruby & ruby gogen.rb
     cd go & go run gogen.go
     cd elixir & elixir gogen.exs
-    cd clojurew && lein run
+    cd clojure && lein run
 
 Coming Soon: Clojure
 
@@ -34,3 +34,6 @@ Coming Soon: Clojure
 - But then I realised I didn't even need to control variable now I was doing the length check in the nested reducer! So I managed to make it even simpler, which was the final edition.
 
 #### Clojure
+
+- `lein repl` is super useful
+- Errors messaging relating to syntax aren't the most helpful out of the box
