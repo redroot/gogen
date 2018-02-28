@@ -58,9 +58,25 @@
            (subs word (+ index 1) (+ index 2))]))
       (range 0 max-index))))
 
+(defn unique-letter-pairs
+  [words]
+  (distinct
+    (apply concat
+      (map word-to-letter-pairs words))))
+
 (defn extract-adjacencies
   [words]
-  words)
+  (let [pairs-list (unique-letter-pairs words)]
+    (reduce
+      (fn [acc pair]
+        (let [a (first pair)
+              b (second pair)
+              a-val (get acc a)
+              b-val (get acc b)]
+          (assoc acc a (conj a-val b)
+                     b (conj b-val a))))
+       initial-letter-map
+       pairs-list)))
 
 (defn extract-letters-pos-map
   [grid]
