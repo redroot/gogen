@@ -5,12 +5,12 @@
 
 (def ^:const text-input-split "#####")
 (def ^:const grid-size 5)
-(def ^:const print_padding 3)
-(def ^:const blank_character "_")
+(def ^:const print-padding 3)
+(def ^:const blank-character "_")
 
 (def all-positions
   (for [row (range 0 grid-size)
-        col (range 0 grid-size)]
+       col (range 0 grid-size)]
     [col row]))
 
 (def all-letters
@@ -78,9 +78,29 @@
        initial-letter-map
        pairs-list)))
 
+(defn extract-known-positions
+  [grid]
+  (into {}
+    (remove nil?
+      (apply concat
+        (map-indexed
+          (fn [row_idx row]
+            (map-indexed
+              (fn [col_idx val]
+                (if (= val "_") nil [val [[col_idx row_idx]]])) row))
+          grid)))))
+
 (defn extract-letters-pos-map
   [grid]
-  grid)
+  (let [known-letters-pos-map (extract-known-positions grid)
+        known-letters-positions (set (map first (vals known-letters-pos-map)))
+        unknown-positions (clojure.set/difference (set all-positions) known-letters-positions)]
+    (into {}
+      (map
+        (fn [[letter v]]
+          (let [known-val (get known-letters-pos-map letter)]
+            (if (nil? known-val) [letter unknown-positions] [letter (set known-val)])))
+        initial-letter-map))))
 
 (defn data-from-puzzle []
   (let [[grid-raw words-raw] (raw-from-puzzle)
@@ -90,8 +110,6 @@
           [(extract-adjacencies words)
            (extract-letters-pos-map grid)])))
 
-; get adjacenies
-; get letter pos map
 ; start with data-from-puzzle and then loop / reduce
 ; over extract-letters-pos-map until all letters have only one pos
 ; solved!
