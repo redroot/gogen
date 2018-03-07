@@ -15,7 +15,7 @@
 
 (def all-letters
   (map #(str (char %))
-    (range (int \A) (int \Y))))
+    (range (int \A) (int \Z))))
 
 (def initial-letter-map
   (let [letter all-letters]
@@ -23,6 +23,24 @@
       (map
         (fn [l] [l,[]])
         all-letters))))
+
+(defn build-neighbourhood [x y]
+  (let [low-x (max 0 (- x 1))
+        low-y (max 0 (- y 1))
+        high-x (min (- grid-size 1) (+ x 1))
+        high-y (min (- grid-size 1) (+ y 1))
+        x-range (range low-x (+ high-x 1))
+        y-range (range low-y (+ high-y 1))]
+    (for [a x-range b x-range]
+      (list a b))))
+
+(defn is-solved?
+  [letter-pos-map]
+  (= (count all-letters)
+     (count
+       (filter
+         #(-> (second %) count (= 1))
+         letter-pos-map))))
 
 (defn puzzle-id []
   (or (System/getenv "PUZZLE")
@@ -110,10 +128,11 @@
           [(extract-adjacencies words)
            (extract-letters-pos-map grid)])))
 
-; start with data-from-puzzle and then loop / reduce
-; over extract-letters-pos-map until all letters have only one pos
-; solved!
-; printing methid required
+(defn solve []
+  (let [[adjacencies letters-pos-map] (data-from-puzzle)]
+    (if (is-solved? letters-pos-map)
+        letters-pos-map
+        "NOT SOLVED NEED REECURSION")))
 
 (defn -main
   "Main entry point to solving puzzles"
