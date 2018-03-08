@@ -8,6 +8,11 @@
 (def ^:const print-padding 3)
 (def ^:const blank-character "_")
 
+(defn surround-vec
+  [middle end]
+  (into [end]
+    (conj middle end)))
+
 (def all-positions
   (for [row (range 0 grid-size)
        col (range 0 grid-size)]
@@ -120,6 +125,19 @@
             (if (nil? known-val) [letter unknown-positions] [letter (set known-val)])))
         initial-letter-map))))
 
+(defn print-grid
+  [grid]
+  (let [padding (repeat print-padding "\n")]
+    (map
+      (fn [l] (apply println l))
+      (surround-vec
+        (vec
+          (map
+            (fn [pos] (clojure.string/join "" pos))
+            grid))
+        (vec
+          (clojure.string/join (repeat print-padding "\n")))))))
+
 (defn data-from-puzzle []
   (let [[grid-raw words-raw] (raw-from-puzzle)
         grid (extract-grid grid-raw)
@@ -134,7 +152,13 @@
         letters-pos-map
         "NOT SOLVED NEED REECURSION")))
 
+
+; print initial grid
+; recur on solve
+; print final grid
+; build step?
+
 (defn -main
   "Main entry point to solving puzzles"
   [& args]
-  (println "asdasd"))
+  (println data-from-puzzle))
