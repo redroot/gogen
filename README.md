@@ -35,5 +35,6 @@ Coming Soon: Clojure
 
 #### Clojure
 
-- `lein repl` is super useful
+- `lein repl` is super useful, but a pain if there are compilation errors as you have to restart the whole repl to get things to load properly.
 - Errors messaging relating to syntax aren't the most helpful out of the box
+- Simple pure functions are a joy to write, many different ways of doing it, however complication control flows took a little while longer and doesnt seem as neat, such as print a few blank lines either side of the grid.

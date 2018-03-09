@@ -39,6 +39,7 @@
     (for [a x-range b x-range]
       (list a b))))
 
+; optimise this to break to false if it finds any count > 1?
 (defn is-solved?
   [letter-pos-map]
   (= (count all-letters)
@@ -101,7 +102,7 @@
        initial-letter-map
        pairs-list)))
 
-(defn extract-known-positions
+(defn extract-known-positions-from-grid
   [grid]
   (into {}
     (remove nil?
@@ -113,9 +114,17 @@
                 (if (= val "_") nil [val [[col_idx row_idx]]])) row))
           grid)))))
 
+(defn extract-known-positions-from-map
+  [letters-pos-map]
+  (set
+    (mapcat second
+      (filter
+        #(-> (second %) count (= 1))
+        letters-pos-map))))
+
 (defn extract-letters-pos-map
   [grid]
-  (let [known-letters-pos-map (extract-known-positions grid)
+  (let [known-letters-pos-map (extract-known-positions-from-grid grid)
         known-letters-positions (set (map first (vals known-letters-pos-map)))
         unknown-positions (clojure.set/difference (set all-positions) known-letters-positions)]
     (into {}
@@ -143,22 +152,57 @@
         grid (extract-grid grid-raw)
         words (extract-words words-raw)]
     (into []
-          [(extract-adjacencies words)
+          [grid
+           (extract-adjacencies words)
            (extract-letters-pos-map grid)])))
 
-(defn solve []
-  (let [[adjacencies letters-pos-map] (data-from-puzzle)]
-    (if (is-solved? letters-pos-map)
-        letters-pos-map
-        "NOT SOLVED NEED REECURSION")))
+(defn build-neighbourhood-set-from-pos-list
+  [pos-list]
+  (set
+    (distinct ; uniq positible identity
+      (mapcat identity
+        (map
+          (fn
+            [pos]
+            (build-neighbourhood (first pos) (second pos)))
+          pos-list)))))
 
+(defn updated-value-from-adjancencies
+  [letter-positions adj-letter-positions known-positions]
+  (let [neighbour-set (build-neighbourhood-set-from-pos-list adj-letter-positions)]
+    (clojure.set/intersection
+      letter-positions
+      (clojure.set/difference neighbour-set known-positions))))
 
-; print initial grid
-; recur on solve
-; print final grid
-; build step?
+(defn solve-step
+  [adjacencies letters-pos-map]
+  (reduce
+    (fn
+      [acc letter]
+      (reduce
+        (fn
+          [inner-acc adj-letter]
+          (if (= (count (get letters-pos-map adj-letter)) 1)
+            inner-acc
+            (assoc inner-acc letter
+              (updated-value-from-adjancencies
+                (get letters-pos-map letter)
+                (get letters-pos-map adj-letter)
+                (extract-known-positions-from-map))))
+        acc
+        (get letters-pos-map adj-letter))))
+    letters-pos-map
+    adjacencies))
+
+(defn solve
+  [adjacencies letters-pos-map]
+  (if (is-solved? letters-pos-map)
+      letters-pos-map
+      (recur adjacencies (solve-step adjacencies letters-pos-map))))
+
+; (print-grid (update-grid (solve (data-from-puzzle))))
 
 (defn -main
   "Main entry point to solving puzzles"
   [& args]
-  (println data-from-puzzle))
+  (print-grid (first (data-from-puzzle))))
