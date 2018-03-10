@@ -5,7 +5,6 @@
 
 (def ^:const text-input-split "#####")
 (def ^:const grid-size 5)
-(def ^:const print-padding 3)
 (def ^:const blank-character "_")
 
 (defn surround-vec
@@ -36,17 +35,18 @@
         high-y (min (- grid-size 1) (+ y 1))
         x-range (range low-x (+ high-x 1))
         y-range (range low-y (+ high-y 1))]
-    (for [a x-range b x-range]
-      (list a b))))
+    (map vec
+      (for [a x-range b y-range]
+        (list a b)))))
 
 ; optimise this to break to false if it finds any count > 1?
 (defn is-solved?
-  [letter-pos-map]
+  [letters-pos-map]
   (= (count all-letters)
      (count
        (filter
          #(-> (second %) count (= 1))
-         letter-pos-map))))
+         letters-pos-map))))
 
 (defn puzzle-id []
   (or (System/getenv "PUZZLE")
@@ -134,18 +134,15 @@
             (if (nil? known-val) [letter unknown-positions] [letter (set known-val)])))
         initial-letter-map))))
 
+; we can have statements per function, fix this
 (defn print-grid
   [grid]
-  (let [padding (repeat print-padding "\n")]
-    (map
-      (fn [l] (apply println l))
-      (surround-vec
-        (vec
-          (map
-            (fn [pos] (clojure.string/join "" pos))
-            grid))
-        (vec
-          (clojure.string/join (repeat print-padding "\n")))))))
+  (map
+    (fn [l] (apply println l))
+      (vec
+        (map
+          (fn [pos] (clojure.string/join "" pos))
+          grid))))
 
 (defn data-from-puzzle []
   (let [[grid-raw words-raw] (raw-from-puzzle)
@@ -160,14 +157,14 @@
   [pos-list]
   (set
     (distinct ; uniq positible identity
-      (mapcat identity
+      (mapcat identity ; flatten 1 layer
         (map
           (fn
             [pos]
             (build-neighbourhood (first pos) (second pos)))
           pos-list)))))
 
-(defn updated-value-from-adjancencies
+(defn updated-value-from-adjacencies
   [letter-positions adj-letter-positions known-positions]
   (let [neighbour-set (build-neighbourhood-set-from-pos-list adj-letter-positions)]
     (clojure.set/intersection
@@ -178,21 +175,21 @@
   [adjacencies letters-pos-map]
   (reduce
     (fn
-      [acc letter]
+      [acc [letter _]]
       (reduce
-        (fn
-          [inner-acc adj-letter]
-          (if (= (count (get letters-pos-map adj-letter)) 1)
-            inner-acc
-            (assoc inner-acc letter
-              (updated-value-from-adjancencies
-                (get letters-pos-map letter)
-                (get letters-pos-map adj-letter)
-                (extract-known-positions-from-map))))
+        (fn [inner-map adj-letter]
+          (let [inner-map-letter-ps (get inner-map letter)
+                inner-map-adj-letter-ps (get inner-map adj-letter)
+                known-positions (extract-known-positions-from-map inner-map)
+                neighbour-set (build-neighbourhood-set-from-pos-list inner-map-adj-letter-ps)
+                updated-value (updated-value-from-adjacencies inner-map-letter-ps inner-map-adj-letter-ps known-positions)]
+                (if (= (count inner-map-letter-ps) 1)
+                  inner-map ; exit early
+                  (assoc inner-map letter updated-value))))
         acc
-        (get letters-pos-map adj-letter))))
+        (get adjacencies letter)))
     letters-pos-map
-    adjacencies))
+    letters-pos-map))
 
 (defn solve
   [adjacencies letters-pos-map]
@@ -200,9 +197,20 @@
       letters-pos-map
       (recur adjacencies (solve-step adjacencies letters-pos-map))))
 
-; (print-grid (update-grid (solve (data-from-puzzle))))
+(defn update-grid
+  [grid letters-pos-map]
+  (reduce
+    (fn
+      [new-grid [letter pos-map]]
+      (let [[x y] (first pos-map)]
+        (update-in new-grid [y x] (fn [_] letter))))
+    grid
+    letters-pos-map))
 
 (defn -main
-  "Main entry point to solving puzzles"
+  "Main entry point to solving Gogen puzzles"
   [& args]
-  (print-grid (first (data-from-puzzle))))
+  (let [[grid adjacencies letters-pos-map] (data-from-puzzle)]
+    (print-grid
+      (update-grid grid
+        (solve adjacencies letters-pos-map)))))

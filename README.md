@@ -7,7 +7,7 @@ Attempts at solving a gogen puzzle solver in various languages
     cd ruby & ruby gogen.rb
     cd go & go run gogen.go
     cd elixir & elixir gogen.exs
-    cd clojure && lein run
+    cd clojure & lein repl # then (-main) I have no idea what I'm doing here
 
 Coming Soon: Clojure
 
@@ -37,4 +37,4 @@ Coming Soon: Clojure
 
 - `lein repl` is super useful, but a pain if there are compilation errors as you have to restart the whole repl to get things to load properly.
 - Errors messaging relating to syntax aren't the most helpful out of the box
-- Simple pure functions are a joy to write, many different ways of doing it, however complication control flows took a little while longer and doesnt seem as neat, such as print a few blank lines either side of the grid.
+- Simple pure functions are a joy to write, many different ways of doing it, however complicated control flows took a little while longer and doesn't seem as neat, such as print a few blank lines either side of the grid - later I found out you can have multiple statements in a function body with negates the wrapping method I found first. Feels like its best for people who know exactly what they are doing from the get go rather than stepping through an idea.
