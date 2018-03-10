@@ -1,0 +1,12 @@
+clojure/resources
+clojure/target
+clojure/classes
+clojure/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+*.lein-*
+*.nrepl-port
+*.hgignore
+*.hg/
