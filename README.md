@@ -1,5 +1,7 @@
 ### Gogen Puzzle Solver
 
+![Gogen Puzzle Example](https://s18.postimg.org/eby0lkzp5/gogen.jpg)
+
 Caveat - I haven't really used anything other than Ruby beyond simple tutorials before this.
 
 Attempts at solving a gogen puzzle solver in various languages
