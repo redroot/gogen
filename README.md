@@ -1,6 +1,6 @@
 ### Gogen Puzzle Solver
 
-![Gogen Puzzle Example](https://s18.postimg.org/eby0lkzp5/gogen.jpg)
+![Gogen Puzzle Example](https://cdn2-img.pressreader.com/pressdisplay/docserver/getimage.aspx?regionKey=o4DpXghKETWCC2xVID7ljw%3D%3D)
 
 Caveat - I haven't really used anything other than Ruby beyond simple tutorials before this.
 
